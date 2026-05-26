@@ -1,0 +1,234 @@
+{
+  "name": "Monday Email Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "e5b14321-a5d7-4293-9319-8fde774046c1",
+      "name": "Monday Morning Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "filters": {
+          "readStatus": "unread",
+          "receivedAfter": "={{ $now.minus({ days: 3 }).toISO() }}"
+        }
+      },
+      "id": "014b0eb3-ac3e-4630-9b48-7752ddb638bb",
+      "name": "Fetch Weekend Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        464,
+        304
+      ],
+      "webhookId": "694dc9c1-1c00-4efc-8f93-0a8036c0eefa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dOJ7hrK96xIB3fOE",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "emails",
+        "include": "specifiedFields",
+        "fieldsToInclude": "subject, from, date",
+        "options": {}
+      },
+      "id": "51fc1e3e-1f42-449c-b9d7-3b3f45607bce",
+      "name": "Aggregate Emails",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following weekend emails and extract:\n1. A brief summary of all emails\n2. Action items with priority levels (high/medium/low)\n3. Priority emails that need immediate attention\n\nEmails:\n{{ JSON.stringify($json.emails, null, 2) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an executive assistant analyzing emails. Extract action items and prioritize them based on urgency, importance, and sender context. Be concise and actionable."
+        }
+      },
+      "id": "66f4245c-8468-4004-a108-507e7f9aa0cb",
+      "name": "Analyze Emails",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        912,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "489cf6d8-f31d-484a-b8ac-9028e2f3883b",
+      "name": "GPT-4.1 Mini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        920,
+        528
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "ToKwnvlIaP8UB1ex",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"summary\": \"Brief overview of weekend emails\",\n  \"actionItems\": [\n    {\n      \"task\": \"Action item description\",\n      \"priority\": \"high\",\n      \"sender\": \"sender name\"\n    }\n  ],\n  \"priorities\": [\n    {\n      \"subject\": \"Email subject\",\n      \"reason\": \"Why this is important\",\n      \"urgency\": \"high\"\n    }\n  ]\n}"
+      },
+      "id": "e18f2aa5-0fe8-4ee4-89f5-23ebfb5df226",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1048,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "badal@drupsc.com",
+        "subject": "=Weekend Email Summary - {{ $now.toFormat(\"MMMM d, yyyy\") }}",
+        "message": "=<h2>Weekend Email Summary</h2>\n<p><strong>Overview:</strong> {{ $json.output.summary }}</p>\n\n<h3>Action Items</h3>\n<ul>\n{{ $json.output.actionItems.map(item => `<li><strong>[${item.priority.toUpperCase()}]</strong> ${item.task} (from ${item.sender})</li>`).join(\"\\n\") }}\n</ul>\n\n<h3>Priority Emails</h3>\n<ul>\n{{ $json.output.priorities.map(p => `<li><strong>${p.subject}</strong> - ${p.reason} (Urgency: ${p.urgency})</li>`).join(\"\\n\") }}\n</ul>",
+        "options": {
+          "senderName": "Email Assistant"
+        }
+      },
+      "id": "c545aa6e-36b5-4f7d-bcbe-2b0e0610abe6",
+      "name": "Send Summary Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        304
+      ],
+      "webhookId": "69ce595b-6bfb-4c34-aa86-dcfe9631b71f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dOJ7hrK96xIB3fOE",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Monday Morning Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Weekend Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Weekend Emails": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Emails": {
+      "main": [
+        [
+          {
+            "node": "Analyze Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Emails": {
+      "main": [
+        [
+          {
+            "node": "Send Summary Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1 Mini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Emails",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Emails",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0560161c-a56a-4169-a36d-e01ba45a746f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ca607f4f05f9ded98fc37059f4cf8f3f145f36a4039150111642b00421e0329"
+  },
+  "id": "OUjGNUmWKVQtNLxF",
+  "tags": []
+}

@@ -1,0 +1,461 @@
+{
+  "name": "Resume Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Resume Analyzer",
+        "formDescription": "Upload your resume (PDF format) for AI-powered analysis",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "fieldName": "fullName",
+              "placeholder": "Enter your full name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email",
+              "fieldName": "email",
+              "placeholder": "your.email@example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Upload Resume (PDF)",
+              "fieldType": "file",
+              "fieldName": "resume",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thank you! Your resume is being analyzed. You will receive the results via email shortly."
+            }
+          }
+        }
+      },
+      "id": "9b62e632-fa1e-4943-8b86-e362d9663b85",
+      "name": "Resume Upload Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "30459266-2707-4b10-b9f1-8f06c79219a8"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "resume",
+        "options": {
+          "joinPages": true
+        }
+      },
+      "id": "1b2b0ead-4e37-419b-a188-88c4f7b8ab4c",
+      "name": "Extract Resume Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "candidate_name",
+              "description": "Full name of the candidate",
+              "required": true
+            },
+            {
+              "name": "email",
+              "description": "Email address of the candidate"
+            },
+            {
+              "name": "phone",
+              "description": "Phone number of the candidate"
+            },
+            {
+              "name": "years_of_experience",
+              "type": "number",
+              "description": "Total years of professional experience",
+              "required": true
+            },
+            {
+              "name": "current_position",
+              "description": "Current or most recent job title"
+            },
+            {
+              "name": "skills",
+              "description": "Comma-separated list of technical skills and competencies",
+              "required": true
+            },
+            {
+              "name": "education",
+              "description": "Highest level of education and degree obtained"
+            },
+            {
+              "name": "summary",
+              "description": "Brief professional summary highlighting key strengths and experience (2-3 sentences)",
+              "required": true
+            },
+            {
+              "name": "overall_score",
+              "type": "number",
+              "description": "Overall resume quality score from 1-10 based on completeness, clarity, and professional presentation",
+              "required": true
+            },
+            {
+              "name": "recommendations",
+              "description": "Specific recommendations to improve the resume (bullet points)",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3b1f82c3-f3ff-4cee-ab50-29a1902134eb",
+      "name": "Analyze Resume",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "2795678d-6bb9-46f2-9135-1cd3c50e2caf",
+      "name": "OpenAI GPT-5",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        528
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "ToKwnvlIaP8UB1ex",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "applicant_name",
+              "value": "={{ $(\"Resume Upload Form\").item.json.fullName }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "applicant_email",
+              "value": "={{ $(\"Resume Upload Form\").item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "submitted_at",
+              "value": "={{ $(\"Resume Upload Form\").item.json.submittedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "extracted_name",
+              "value": "={{ $json.output.candidate_name }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "extracted_email",
+              "value": "={{ $json.output.email }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "phone",
+              "value": "={{ $json.output.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "years_experience",
+              "value": "={{ $json.output.years_of_experience }}",
+              "type": "number"
+            },
+            {
+              "id": "8",
+              "name": "current_position",
+              "value": "={{ $json.output.current_position }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "skills",
+              "value": "={{ $json.output.skills }}",
+              "type": "string"
+            },
+            {
+              "id": "10",
+              "name": "education",
+              "value": "={{ $json.output.education }}",
+              "type": "string"
+            },
+            {
+              "id": "11",
+              "name": "professional_summary",
+              "value": "={{ $json.output.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "12",
+              "name": "quality_score",
+              "value": "={{ $json.output.overall_score }}",
+              "type": "number"
+            },
+            {
+              "id": "13",
+              "name": "improvement_recommendations",
+              "value": "={{ $json.output.recommendations }}",
+              "type": "string"
+            },
+            {
+              "id": "14",
+              "name": "analysis_date",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ace53863-3484-43b1-9370-13095230eb74",
+      "name": "Format Analysis Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "6QfLtv7p4RGvuOky",
+          "mode": "list",
+          "cachedResultName": "resume_analysis",
+          "cachedResultUrl": "/projects/x95GCo7SvXKvZrys/datatables/6QfLtv7p4RGvuOky"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "years_experience": "={{ $json.years_experience }}",
+            "quality_score": "={{ $json.quality_score }}",
+            "phone_number": "={{ $json.phone }}",
+            "name": "={{ $json.extracted_name }}",
+            "email": "={{ $json.extracted_email }}",
+            "current_position": "={{ $json.current_position }}",
+            "skills": "={{ $json.skills }}",
+            "professional_summary": "={{ $json.professional_summary }}",
+            "improvement_recommendations": "={{ $json.improvement_recommendations }}"
+          },
+          "matchingColumns": [
+            "phone"
+          ],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "skills",
+              "displayName": "skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "professional_summary",
+              "displayName": "professional_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "current_position",
+              "displayName": "current_position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "years_experience",
+              "displayName": "years_experience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "quality_score",
+              "displayName": "quality_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "improvement_recommendations",
+              "displayName": "improvement_recommendations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "0919aa69-4f16-4905-8d35-cf9d7d4e8e39",
+      "name": "Store Analysis Results",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Resume Upload Form": {
+      "main": [
+        [
+          {
+            "node": "Extract Resume Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Resume Text": {
+      "main": [
+        [
+          {
+            "node": "Analyze Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Resume": {
+      "main": [
+        [
+          {
+            "node": "Format Analysis Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Resume",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Analysis Results": {
+      "main": [
+        [
+          {
+            "node": "Store Analysis Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6073896d-dfe6-4f61-8162-3b926b157db1",
+  "meta": {
+    "instanceId": "2ca607f4f05f9ded98fc37059f4cf8f3f145f36a4039150111642b00421e0329"
+  },
+  "id": "Dlqr1gt9aNBRKAPJ",
+  "tags": []
+}
